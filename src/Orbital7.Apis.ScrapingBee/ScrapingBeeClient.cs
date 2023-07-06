@@ -1,6 +1,8 @@
 ﻿namespace Orbital7.Apis.ScrapingBee;
 
-public class ScrapingBeeClient
+// Documentation: https://www.scrapingbee.com/documentation/
+public class ScrapingBeeClient :
+    IScrapingBeeClient
 {
     private const string BASE_URL = "https://app.scrapingbee.com/api/v1/";
 
@@ -12,19 +14,22 @@ public class ScrapingBeeClient
         this.ApiKey = apiKey;
     }
 
-    public async Task<string> ScrapeAsync(
+    public async Task<ContentResponse> ScrapeAsync(
         ScrapeRequest scrapeRequest)
     {
-        return await SendRequestAsync(GetUrl(scrapeRequest));
+        var url = $"{BASE_URL}?{scrapeRequest.ToQueryString(this.ApiKey)}";
+        var response = await SendRequestAsync(url);
+        return response;
     }
 
-    private string GetUrl(
-        ScrapeRequest scrapeRequest)
+    public async Task<UsageResponse> UsageAsync()
     {
-        return $"{BASE_URL}?{scrapeRequest.ToQueryString(this.ApiKey)}";
+        var url = $"{BASE_URL}usage?api_key={this.ApiKey}";
+        var response = await SendRequestAsync(url);
+        return JsonSerializer.Deserialize<UsageResponse>(response.Content);
     }
 
-    private async Task<string> SendRequestAsync(
+    private async Task<ContentResponse> SendRequestAsync(
         string url)
     {
         var httpClientHandler = new HttpClientHandler();
@@ -42,8 +47,14 @@ public class ScrapingBeeClient
 
         using (var response = await httpClient.SendAsync(httpRequest))
         {
-            var responseContent = await response.Content.ReadAsStringAsync();
-
+            var contentResponse = new ContentResponse()
+            {
+                Cost = GetSingularHeaderValueInteger(response, "Spb-cost"),
+                InitialStatusCode = GetSingularHeaderValueInteger(response, "Spb-initial-status-code"),
+                ResolvedUrl = GetSingularHeaderValue(response, "Spb-resolved-url"),
+                Content = await response.Content.ReadAsStringAsync(),
+            };
+            
             if (!response.IsSuccessStatusCode)
             {
                 //var error = JsonSerializationHelper.DeserializeFromJson<ErrorResponse>(responseContent);
@@ -52,8 +63,34 @@ public class ScrapingBeeClient
             }
             else
             {
-                return responseContent;
+                return contentResponse;
             }
         }
+    }
+
+    private string GetSingularHeaderValue(
+        HttpResponseMessage response,
+        string headerKey)
+    {
+        var headerValues = response.Headers.GetValues(headerKey);
+        if (headerValues != null && headerValues.Any())
+        {
+            return headerValues.First();
+        }
+
+        return null;
+    }
+
+    private int? GetSingularHeaderValueInteger(
+        HttpResponseMessage response,
+        string headerKey)
+    {
+        var headerValue = GetSingularHeaderValue(response, headerKey);
+        if (headerValue.HasText())
+        {
+            return int.Parse(headerValue);
+        }
+
+        return null;
     }
 }
