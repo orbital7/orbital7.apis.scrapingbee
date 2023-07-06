@@ -47,23 +47,23 @@ public class ScrapingBeeClient :
 
         using (var response = await httpClient.SendAsync(httpRequest))
         {
-            var contentResponse = new ContentResponse()
-            {
-                Cost = GetSingularHeaderValueInteger(response, "Spb-cost"),
-                InitialStatusCode = GetSingularHeaderValueInteger(response, "Spb-initial-status-code"),
-                ResolvedUrl = GetSingularHeaderValue(response, "Spb-resolved-url"),
-                Content = await response.Content.ReadAsStringAsync(),
-            };
+            var responseContent = await response.Content.ReadAsStringAsync();
             
-            if (!response.IsSuccessStatusCode)
+            if (response.IsSuccessStatusCode)
             {
-                //var error = JsonSerializationHelper.DeserializeFromJson<ErrorResponse>(responseContent);
-                //throw new Exception($"ERROR: {error.Error} ({error.Message})");
-                throw new Exception("TODO: Parse error response");
+                return new ContentResponse()
+                {
+                    Cost = GetSingularHeaderValueInteger(response, "Spb-cost"),
+                    InitialStatusCode = GetSingularHeaderValueInteger(response, "Spb-initial-status-code"),
+                    ResolvedUrl = GetSingularHeaderValue(response, "Spb-resolved-url"),
+                    Content = responseContent,
+                };
             }
             else
             {
-                return contentResponse;
+                throw new ScrapingBeeException(
+                    response.StatusCode,
+                    responseContent);
             }
         }
     }
@@ -72,8 +72,8 @@ public class ScrapingBeeClient :
         HttpResponseMessage response,
         string headerKey)
     {
-        var headerValues = response.Headers.GetValues(headerKey);
-        if (headerValues != null && headerValues.Any())
+        var found = response.Headers.TryGetValues(headerKey, out IEnumerable<string> headerValues);
+        if (found && headerValues != null && headerValues.Any())
         {
             return headerValues.First();
         }
