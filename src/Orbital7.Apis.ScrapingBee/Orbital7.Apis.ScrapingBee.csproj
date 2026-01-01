@@ -2,11 +2,11 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
-    <AssemblyVersion>1.0.3.0</AssemblyVersion>
-    <FileVersion>1.0.3.0</FileVersion>
+    <AssemblyVersion>1.0.4.0</AssemblyVersion>
+    <FileVersion>1.0.4.0</FileVersion>
     <Company>Orbital7</Company>
-    <Copyright>Copyright © 2025 Orbital7</Copyright>
-    <Version>1.0.3</Version>
+    <Copyright>Copyright © 2023-2026 Orbital7</Copyright>
+    <Version>1.0.4</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>.NET *Unofficial* library for ScrapingBee API (https://scrapingbee.com)</Description>
     <Authors>Josh van Eikeren</Authors>
@@ -35,7 +35,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Text.Json" Version="9.0.4" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
+    <PackageReference Include="System.Text.Json" Version="10.0.1" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
   </ItemGroup>
 	
 </Project>
